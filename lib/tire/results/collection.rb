@@ -108,7 +108,7 @@ module Tire
 
             # Update the document with content and ID
             document = h['_source'] ? document.update( h['_source'] || {} ) : document.update( __parse_fields__(h['fields']) )
-            document.update( {'id' => h['_id']} )
+            # document.update( {'id' => h['_id']} )
 
             # Update the document with meta information
             ['_score', '_type', '_index', '_version', 'sort', 'highlight', '_explanation'].each { |key| document.update( {key => h[key]} || {} ) }
@@ -121,28 +121,27 @@ module Tire
 
       def __get_results_with_load(hits)
         return [] if hits.empty?
-
         records = {}
-        @response['hits']['hits'].group_by { |item| item['_type'] }.each do |type, items|
+        @response['hits']['hits'].group_by { |item| item['_source']['format'] }.each do |format, items|
           raise NoMethodError, "You have tried to eager load the model instances, " +
                                "but Tire cannot find the model class because " +
-                               "document has no _type property." unless type
+                               "document has no format property." unless format
 
           begin
-            klass = type.camelize.constantize
+            klass = format.camelize.constantize
           rescue NameError => e
             raise NameError, "You have tried to eager load the model instances, but " +
-                             "Tire cannot find the model class '#{type.camelize}' " +
-                             "based on _type '#{type}'.", e.backtrace
+                             "Tire cannot find the model class '#{format.camelize}' " +
+                             "based on format '#{format}'.", e.backtrace
           end
 
-          records[type] = __find_records_by_ids klass, items.map { |h| h['_id'] }
+          records[format] = __find_records_by_ids klass, items.map { |h| h['_source']['id'] }
         end
 
         # Reorder records to preserve the order from search results
         @response['hits']['hits'].map do |item|
-          records[item['_type']].detect do |record|
-            record.id.to_s == item['_id'].to_s
+          records[item['_source']['format']].detect do |record|
+            record.id.to_s == item['_source']['id'].to_s
           end
         end
       end
