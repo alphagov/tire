@@ -1,6 +1,10 @@
 Tire
 =========
 
+* This branch assumes that you're document id the source hash and the type is called format, and that you're not using tire to index the documents or persist documents.*
+
+
+
 _Tire_ is a Ruby (1.8 or 1.9) client for the [Elasticsearch](http://www.elasticsearch.org/)
 search engine/database.
 
